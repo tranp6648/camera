@@ -2,7 +2,7 @@ services:
   - type: web
     name: face-ai-service
     runtime: docker
-    plan: starter
+    plan: free
     region: singapore
     dockerfilePath: ./Dockerfile
     dockerContext: .
