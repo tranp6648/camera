@@ -244,10 +244,17 @@ class FaceVerificationPipeline:
             if act.hand_count == 0 or fa is None:
                 res["note"] = "Không thấy bàn tay trong frame hành động"
                 return res
-            # Kết hợp đếm tổng ngón (đã tính góc khớp ngón cái) và dung sai hẹp cho trường hợp giơ 1-3 ngón
-            action_ok = fa == target or (target in (1, 2, 3) and fna == target and fa == target + 1)
+            # 1-3: cho phép +1 nếu nhầm ngón cái. 5: xoè bàn tay — 4 ngón dài đã giơ là đủ
+            # (MediaPipe hay bỏ sót ngón cái do góc camera / khớp hơi cong).
+            action_ok = (
+                fa == target
+                or (target in (1, 2, 3) and fna == target and fa == target + 1)
+                or (target == 5 and fna == 4 and fa >= 4)
+            )
             neutral_matches = neutral.fingers is not None and (
-                neutral.fingers == target or (target in (1, 2, 3) and neutral.fingers_no_thumb == target)
+                neutral.fingers == target
+                or (target in (1, 2, 3) and neutral.fingers_no_thumb == target)
+                or (target == 5 and (neutral.fingers_no_thumb == 4 or neutral.fingers >= 5))
             )
             res["passed"] = action_ok and not neutral_matches
             if not action_ok:

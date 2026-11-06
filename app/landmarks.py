@@ -73,6 +73,8 @@ def _angle_deg(a: Point, b: Point, c: Point) -> float:
 def count_fingers(pts: List[Point]) -> Tuple[int, int, bool]:
     """Trả về (tổng số ngón giơ, số ngón không tính cái, ngón cái có giơ không).
     Kết hợp tỉ lệ khoảng cách + góc khớp để tránh đếm nhầm ngón cái đang khép hờ khi giơ 2-3 ngón.
+    Khi 4 ngón dài đã xoè (bàn tay mở) dùng ngưỡng ngón cái nới hơn — góc camera hay làm
+    ngón cái trông cong/khép dù người dùng đang giơ đủ 5.
     """
     wrist = pts[0]
     palm = max(_dist(pts[0], pts[9]), 1e-6)
@@ -85,13 +87,27 @@ def count_fingers(pts: List[Point]) -> Tuple[int, int, bool]:
             and straight
         ):
             extended += 1
-    thumb_straight = _angle_deg(pts[1], pts[2], pts[4]) >= 148.0 and _angle_deg(pts[2], pts[3], pts[4]) >= 145.0
-    thumb = (
-        _dist(pts[4], pts[17]) > _dist(pts[2], pts[17]) * 1.30
-        and _dist(pts[4], pts[5]) > 0.52 * palm
-        and _dist(pts[4], pts[9]) > 0.58 * palm
-        and thumb_straight
-    )
+
+    tip, ip, mcp_t, cmc = pts[4], pts[3], pts[2], pts[1]
+    pinky_mcp, index_mcp, mid_mcp = pts[17], pts[5], pts[9]
+
+    if extended == 4:
+        # Xoè bàn tay: tip ra ngoài hơn IP so với lòng bàn, không cần góc khớp quá thẳng
+        tip_out = _dist(tip, mid_mcp) > _dist(ip, mid_mcp) * 1.02
+        tip_vs_pinky = _dist(tip, pinky_mcp) > _dist(mcp_t, pinky_mcp) * 1.08
+        tip_vs_index = _dist(tip, index_mcp) > 0.32 * palm
+        tip_vs_wrist = _dist(wrist, tip) > _dist(wrist, ip) * 1.02
+        thumb = tip_out and tip_vs_pinky and tip_vs_index and tip_vs_wrist
+    else:
+        thumb_straight = (
+            _angle_deg(cmc, mcp_t, tip) >= 148.0 and _angle_deg(mcp_t, ip, tip) >= 145.0
+        )
+        thumb = (
+            _dist(tip, pinky_mcp) > _dist(mcp_t, pinky_mcp) * 1.30
+            and _dist(tip, index_mcp) > 0.52 * palm
+            and _dist(tip, mid_mcp) > 0.58 * palm
+            and thumb_straight
+        )
     return extended + (1 if thumb else 0), extended, thumb
 
 
