@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: face-ai-service
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "10000"
+      - key: MODELS_DIR
+        value: /app/models
+      - key: FACE_AI_TOKEN
+        sync: false
+      - key: FACE_AI_WORKERS
+        value: "1"
+      - key: MIN_SIMILARITY_THRESHOLD
+        value: "0.42"
+      - key: MIN_LIVENESS_THRESHOLD
+        value: "0.65"

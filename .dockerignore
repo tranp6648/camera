@@ -1,0 +1,16 @@
+.git
+.gitignore
+__pycache__
+**/__pycache__
+*.py[cod]
+*.egg-info
+.venv
+venv
+.env
+.env.*
+*.md
+.DS_Store
+.idea
+.vscode
+agent-transcripts
+.cursor
