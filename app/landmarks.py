@@ -73,8 +73,7 @@ def _angle_deg(a: Point, b: Point, c: Point) -> float:
 def count_fingers(pts: List[Point]) -> Tuple[int, int, bool]:
     """Trả về (tổng số ngón giơ, số ngón không tính cái, ngón cái có giơ không).
     Kết hợp tỉ lệ khoảng cách + góc khớp để tránh đếm nhầm ngón cái đang khép hờ khi giơ 2-3 ngón.
-    Khi 4 ngón dài đã xoè (bàn tay mở) dùng ngưỡng ngón cái nới hơn — góc camera hay làm
-    ngón cái trông cong/khép dù người dùng đang giơ đủ 5.
+    Khi 4 ngón dài đã xoè: chỉ cộng ngón cái nếu tip ra khỏi lòng bàn rõ (úp cái → vẫn là 4).
     """
     wrist = pts[0]
     palm = max(_dist(pts[0], pts[9]), 1e-6)
@@ -92,12 +91,18 @@ def count_fingers(pts: List[Point]) -> Tuple[int, int, bool]:
     pinky_mcp, index_mcp, mid_mcp = pts[17], pts[5], pts[9]
 
     if extended == 4:
-        # Xoè bàn tay: tip ra ngoài hơn IP so với lòng bàn, không cần góc khớp quá thẳng
-        tip_out = _dist(tip, mid_mcp) > _dist(ip, mid_mcp) * 1.02
-        tip_vs_pinky = _dist(tip, pinky_mcp) > _dist(mcp_t, pinky_mcp) * 1.08
-        tip_vs_index = _dist(tip, index_mcp) > 0.32 * palm
-        tip_vs_wrist = _dist(wrist, tip) > _dist(wrist, ip) * 1.02
-        thumb = tip_out and tip_vs_pinky and tip_vs_index and tip_vs_wrist
+        # Xoè 5 ngón: tip phải ra khỏi lòng bàn rõ (không chấp nhận úp ngón cái → chỉ còn 4).
+        # So với IP: tip xa hồng/giữa/trỏ hơn; khớp IP không gập mạnh.
+        tip_clear_of_index = _dist(tip, index_mcp) > max(_dist(ip, index_mcp) * 1.18, 0.40 * palm)
+        tip_vs_pinky = _dist(tip, pinky_mcp) > _dist(ip, pinky_mcp) * 1.12
+        tip_vs_mid = _dist(tip, mid_mcp) > _dist(ip, mid_mcp) * 1.08
+        tip_ahead = _dist(wrist, tip) > _dist(wrist, ip) * 1.06
+        not_curled = _angle_deg(mcp_t, ip, tip) >= 132.0
+        open_cmc = _angle_deg(cmc, mcp_t, tip) >= 128.0
+        thumb = (
+            tip_clear_of_index and tip_vs_pinky and tip_vs_mid
+            and tip_ahead and not_curled and open_cmc
+        )
     else:
         thumb_straight = (
             _angle_deg(cmc, mcp_t, tip) >= 148.0 and _angle_deg(mcp_t, ip, tip) >= 145.0
