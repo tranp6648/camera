@@ -516,7 +516,10 @@ class FaceVerificationPipeline:
                     if fa.brightness is not None and (fa.brightness < MIN_FACE_BRIGHTNESS or fa.brightness > MAX_FACE_BRIGHTNESS):
                         reasons.add("BAD_LIGHTING", f"ảnh {i + 1}: độ sáng {fa.brightness:.0f}")
                     if fa.yaw is not None and abs(fa.yaw) > ENROLL_MAX_ABS_YAW:
-                        reasons.add("POSE_TOO_EXTREME", f"ảnh {i + 1}: góc nghiêng {abs(fa.yaw):.0f}° > {ENROLL_MAX_ABS_YAW:.0f}°")
+                        reasons.add(
+                            "POSE_TOO_EXTREME",
+                            f"ảnh {i + 1}: góc nghiêng {abs(fa.yaw):.0f}° > {ENROLL_MAX_ABS_YAW:.0f}°",
+                        )
                 samples.append(fa)
 
         # Chạy MiniFASNet theo batch cho các mẫu hợp lệ
